@@ -3,6 +3,7 @@ import * as mongoose from 'mongoose';
 import 'reflect-metadata';
 import * as semver from 'semver';
 import { deprecate, format } from 'util';
+import { logger } from './logSettings';
 
 /* istanbul ignore next */
 if (semver.lt(mongoose.version, '5.9.2')) {
@@ -20,7 +21,7 @@ import { constructors, models } from './internal/data';
 import { NoValidClass } from './internal/errors';
 import { _buildSchema } from './internal/schema';
 import { getName, mergeMetadata, mergeSchemaOptions } from './internal/utils';
-import { logger } from './logSettings';
+
 import {
   AnyParamConstructor,
   DocumentType,
