@@ -1,14 +1,14 @@
+import { Severity } from './internal/constants';
 import { globalOptions } from './internal/data';
+import { assertion } from './internal/utils';
 import { logger } from './logSettings';
-import { IGlobalOptions, Severity } from './types';
+import type { IGlobalOptions } from './types';
 
 /**
  * Set Typegoose's global Options
  */
 export function setGlobalOptions(options: IGlobalOptions) {
-  if (typeof options !== 'object') {
-    throw new TypeError('"options" argument needs to be an object!');
-  }
+  assertion(typeof options === 'object', new TypeError('"options" argument needs to be an object!'));
 
   logger.info('"setGlobalOptions" got called with', options);
 
@@ -25,14 +25,13 @@ export function setGlobalOptions(options: IGlobalOptions) {
 export function parseENV(): void {
   logger.info('"parseENV" got called');
 
-  if (process.env.TG_USE_NEW_ENUM?.length > 0) {
-    logger.warn('TG_USE_NEW_ENUM & useNewEnum got deprecated, see changelog 6.2 for more');
-  }
-
   const options: IGlobalOptions = {
     globalOptions: {},
     options: {
-      allowMixed: process.env.TG_ALLOW_MIXED in Severity ? mapValueToSeverity(process.env.TG_ALLOW_MIXED) : globalOptions.options.allowMixed
+      allowMixed:
+        process.env.TG_ALLOW_MIXED && process.env.TG_ALLOW_MIXED in Severity
+          ? mapValueToSeverity(process.env.TG_ALLOW_MIXED)
+          : globalOptions.options?.allowMixed
     }
   };
 
@@ -41,7 +40,7 @@ export function parseENV(): void {
 
 /**
  * Maps strings to the number
- * -> This function is specificly build for "Severity"-Enum
+ * -> This function is specifically build for "Severity"-Enum
  * @throws {Error} if not in range of the "Severity"-Enum
  * @example
  * ```ts
@@ -53,9 +52,7 @@ export function parseENV(): void {
  * @param value The value to check for
  */
 function mapValueToSeverity(value: string | number): Severity {
-  if (!(value in Severity)) {
-    throw new Error(`"value" is not in range of "Severity"! (got: ${value})`);
-  }
+  assertion(value in Severity, new Error(`"value" is not in range of "Severity"! (got: ${value})`));
   if (typeof value === 'number') {
     return value;
   }

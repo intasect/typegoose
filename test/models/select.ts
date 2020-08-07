@@ -6,7 +6,7 @@ export enum SelectStrings {
   test3 = 'testing 3 should not default include'
 }
 
-// Note: "select: true" is just to test if it works, and dosnt give an error
+// Note: "select: true" is just to test if it works, and doesn't give an error
 export class Select {
   @prop({ required: true, default: SelectStrings.test1, select: false })
   public test1!: string;
@@ -18,4 +18,4 @@ export class Select {
   public test3!: string;
 }
 
-export const model = getModelForClass(Select);
+export const SelectModel = getModelForClass(Select);
