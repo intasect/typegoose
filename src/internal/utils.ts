@@ -3,19 +3,19 @@ import * as mongoose from 'mongoose';
 import { format } from 'util';
 
 import { logger } from '../logSettings';
-import type {
+import {
   AnyParamConstructor,
-  Func,
   IModelOptions,
   IObjectWithTypegooseFunction,
   IObjectWithTypegooseName,
   IPrototype,
-  KeyStringAny,
-  PropOptionsForNumber,
-  PropOptionsForString,
-  VirtualOptions
+  PropOptionsWithNumberValidate,
+  PropOptionsWithStringValidate,
+  Severity,
+  VirtualOptions,
+  WhatIsIt
 } from '../types';
-import { DecoratorKeys, Severity, WhatIsIt } from './constants';
+import { DecoratorKeys } from './constants';
 import { constructors, globalOptions, schemas } from './data';
 import { NoValidClass } from './errors';
 
@@ -28,12 +28,10 @@ export function isPrimitive(Type: any): boolean {
   if (typeof Type?.name === 'string') {
     // try to match "Type.name" with all the Property Names of "mongoose.Schema.Types"
     // (like "String" with "mongoose.Schema.Types.String")
-    return (
-      Object.getOwnPropertyNames(mongoose.Schema.Types).includes(Type.name) ||
+    return Object.getOwnPropertyNames(mongoose.Schema.Types).includes(Type.name)
       // try to match "Type.name" with all "mongoose.Schema.Types.*.name"
       // (like "SchemaString" with "mongoose.Schema.Types.String.name")
-      Object.values(mongoose.Schema.Types).findIndex((v) => v.name === Type.name) >= 0
-    );
+      || Object.values(mongoose.Schema.Types).findIndex((v) => v.name === Type.name) >= 0;
   }
 
   return false;
@@ -46,13 +44,11 @@ export function isPrimitive(Type: any): boolean {
  */
 export function isAnRefType(Type: any): boolean {
   if (typeof Type?.name === 'string') {
-    // Note: this is not done "once" because types can be added as custom types
-    const tmp = Object.getOwnPropertyNames(mongoose.Schema.Types).filter((x) => {
+    const tmp = Object.getOwnPropertyNames(mongoose.Schema.Types).filter(x => {
       switch (x) {
         case 'Oid':
         case 'Bool':
         case 'Object':
-        case 'Boolean':
           return false;
         default:
           return true;
@@ -61,12 +57,10 @@ export function isAnRefType(Type: any): boolean {
 
     // try to match "Type.name" with all the Property Names of "mongoose.Schema.Types" except the ones with aliases
     // (like "String" with "mongoose.Schema.Types.String")
-    return (
-      tmp.includes(Type.name) ||
+    return tmp.includes(Type.name)
       // try to match "Type.name" with all "mongoose.Schema.Types.*.name"
       // (like "SchemaString" with "mongoose.Schema.Types.String.name")
-      Object.values(mongoose.Schema.Types).findIndex((v) => v.name === Type.name) >= 0
-    );
+      || Object.values(mongoose.Schema.Types).findIndex((v) => v.name === Type.name) >= 0;
   }
 
   return false;
@@ -126,22 +120,21 @@ export function isString(Type: any): Type is string {
  * @param whatis What should it be for a type?
  */
 export function initProperty(name: string, key: string, whatis: WhatIsIt) {
-  const schemaProp = !schemas.has(name) ? schemas.set(name, {}).get(name)! : schemas.get(name)!;
+  if (!schemas.has(name)) {
+    schemas.set(name, {});
+  }
 
   switch (whatis) {
     case WhatIsIt.ARRAY:
-      schemaProp[key] = [{}];
+      schemas.get(name)[key] = [{}];
       break;
     case WhatIsIt.MAP:
     case WhatIsIt.NONE:
-      schemaProp[key] = {};
+      schemas.get(name)[key] = {};
       break;
     default:
-      /* istanbul ignore next */ // ignore because this case should really never happen (typescript prevents this)
-      throw new TypeError('"whatis" is not supplied OR doesn\'t have a case yet!');
+      throw new TypeError('"whatis" is not supplied OR dosnt have a case yet!');
   }
-
-  return schemaProp;
 }
 
 /**
@@ -159,12 +152,9 @@ export function getClassForDocument(document: mongoose.Document): NewableFunctio
  * @param input
  */
 export function getClass(
-  input:
-    | (mongoose.Document & IObjectWithTypegooseFunction)
-    | (mongoose.Schema.Types.Embedded & IObjectWithTypegooseFunction)
-    | string
-    | IObjectWithTypegooseName
-    | any
+  input: mongoose.Document & IObjectWithTypegooseFunction
+    | mongoose.Schema.Types.Embedded & IObjectWithTypegooseFunction
+    | string | IObjectWithTypegooseName | any
 ): NewableFunction | undefined {
   if (typeof input === 'string') {
     return constructors.get(input);
@@ -184,15 +174,23 @@ export function getClass(
  * Return true if there are Options
  * @param options The raw Options
  */
-export function isWithStringValidate(options: PropOptionsForString): options is PropOptionsForString {
-  return !isNullOrUndefined(options.match ?? options.minlength ?? options.maxlength);
+export function isWithStringValidate(
+  options: PropOptionsWithStringValidate
+): options is PropOptionsWithStringValidate {
+  return !isNullOrUndefined(
+    options.match
+    ?? options.minlength
+    ?? options.maxlength
+  );
 }
 
 /**
  * Return true if there are Options
  * @param options The raw Options
  */
-export function isWithStringTransform(options: PropOptionsForString): options is PropOptionsForString {
+export function isWithStringTransform(
+  options: PropOptionsWithStringValidate
+): options is PropOptionsWithStringValidate {
   return !isNullOrUndefined(options.lowercase ?? options.uppercase ?? options.trim);
 }
 
@@ -200,7 +198,7 @@ export function isWithStringTransform(options: PropOptionsForString): options is
  * Return true if there are Options
  * @param options The raw Options
  */
-export function isWithNumberValidate(options: PropOptionsForNumber): options is PropOptionsForNumber {
+export function isWithNumberValidate(options: PropOptionsWithNumberValidate): options is PropOptionsWithNumberValidate {
   return !isNullOrUndefined(options.min ?? options.max);
 }
 
@@ -214,7 +212,7 @@ export function isWithVirtualPOP(options: any): options is VirtualOptions {
   return Object.keys(options).some((v) => virtualOptions.includes(v));
 }
 
-export const allVirtualoptions = virtualOptions.slice(0); // copy "virtualOptions" array
+export const allVirtualoptions = virtualOptions.slice(0);
 allVirtualoptions.push('ref');
 
 /**
@@ -253,13 +251,18 @@ export function assignMetadata(key: DecoratorKeys, value: unknown, cl: new () =>
  * @internal
  */
 export function mergeMetadata<T = any>(key: DecoratorKeys, value: unknown, cl: new () => {}): T {
-  assertion(typeof key === 'string', new TypeError(`"${key}"(key) is not a string! (mergeMetadata)`));
-  assertionIsClass(cl);
+  if (typeof key !== 'string') {
+    throw new TypeError(`"${key}"(key) is not a string! (assignMetadata)`);
+  }
+  if (typeof cl !== 'function') {
+    throw new NoValidClass(cl);
+  }
 
-  // Please don't remove the other values from the function, even when unused - it is made to be clear what is what
-  return mergeWith({}, Reflect.getMetadata(key, cl), value, (_objValue, srcValue, ckey, _object, _source, _stack) =>
-    customMerger(ckey, srcValue)
-  );
+  // Please dont remove the other values from the function, even when unused - it is made to be clear what is what
+  return mergeWith({},
+    Reflect.getMetadata(key, cl),
+    value,
+    (_objValue, srcValue, ckey, _object, _source, _stack) => customMerger(ckey, srcValue));
 }
 
 /**
@@ -267,8 +270,8 @@ export function mergeMetadata<T = any>(key: DecoratorKeys, value: unknown, cl: n
  * @param key the key of the current object
  * @param val the value of the object that should get returned for "existingMongoose" & "existingConnection"
  */
-function customMerger(key: string | number, val: unknown): undefined | unknown {
-  if (typeof key !== 'string') {
+function customMerger(key: string | number, val: unknown): any {
+  if (isNullOrUndefined(key) || typeof key !== 'string') {
     return undefined;
   }
   if (/^(existingMongoose|existingConnection)$/.test(key)) {
@@ -283,7 +286,7 @@ function customMerger(key: string | number, val: unknown): undefined | unknown {
  * @param value The value to use
  * @param cl The Class to get the values from
  */
-export function mergeSchemaOptions<U extends AnyParamConstructor<any>>(value: mongoose.SchemaOptions | undefined, cl: U) {
+export function mergeSchemaOptions<T, U extends AnyParamConstructor<T>>(value: mongoose.SchemaOptions, cl: U) {
   return mergeMetadata<IModelOptions>(DecoratorKeys.ModelOptions, { schemaOptions: value }, cl).schemaOptions;
 }
 
@@ -301,7 +304,7 @@ export function getRightTarget(target: any): any {
  * (with suffix)
  * @param cl The Class
  */
-export function getName<U extends AnyParamConstructor<any>>(cl: U) {
+export function getName<T, U extends AnyParamConstructor<T>>(cl: U) {
   const ctor: any = getRightTarget(cl);
   const options: IModelOptions = Reflect.getMetadata(DecoratorKeys.ModelOptions, ctor) ?? {};
   const baseName: string = ctor.name;
@@ -328,12 +331,11 @@ export function getName<U extends AnyParamConstructor<any>>(cl: U) {
  * @param cl The Type
  */
 export function isNotDefined(cl: any) {
-  return (
-    typeof cl === 'function'
-    && !isPrimitive(cl)
-    && cl !== Object
-    && !schemas.has(getName(cl))
-  );
+  return typeof cl === 'function' &&
+    !isPrimitive(cl) &&
+    cl !== Object &&
+    cl !== mongoose.Schema.Types.Buffer &&
+    !schemas.has(getName(cl));
 }
 
 /**
@@ -346,7 +348,6 @@ export function isNotDefined(cl: any) {
  * @param Type The Type of the array
  * @param target The Target class
  * @param pkey Key of the Property
- * @param loggerType Type to use for logging
  */
 export function mapArrayOptions(
   rawOptions: any,
@@ -356,30 +357,35 @@ export function mapArrayOptions(
   loggerType?: AnyParamConstructor<any>
 ): mongoose.SchemaTypeOpts<any> {
   logger.debug('mapArrayOptions called');
-  loggerType = loggerType ?? Type as AnyParamConstructor<any>;
 
   if (!(Type instanceof mongoose.Schema)) {
     loggerType = Type;
   }
 
-  const mapped = mapOptions(rawOptions, Type, target, pkey, loggerType);
+  const options = Object.assign({}, rawOptions); // for sanity
+  const mapped = mapOptions(rawOptions, Type, target, pkey, false, loggerType);
 
   /** The Object that gets returned */
-  const returnObject: KeyStringAny = {
+  const returnObject = {
     ...mapped.outer,
-    type: [
-      {
-        type: Type,
-        ...mapped.inner
-      }
-    ]
+    type: [{
+      type: Type,
+      ...mapped.inner
+    }]
   };
 
-  returnObject.type = createArrayFromDimensions(rawOptions, returnObject.type, getName(target), pkey);
-
-  if (loggerType) {
-    logger.debug('(Array) Final mapped Options for Type "%s"', getName(loggerType), returnObject);
+  if (typeof options?.innerOptions === 'object') {
+    for (const [key, value] of Object.entries(options.innerOptions)) {
+      returnObject.type[0][key] = value;
+    }
   }
+  if (typeof options?.outerOptions === 'object') {
+    for (const [key, value] of Object.entries(options.outerOptions)) {
+      returnObject[key] = value;
+    }
+  }
+
+  logger.debug('(Array) Final mapped Options for Type "%s"', getName(loggerType), returnObject);
 
   return returnObject;
 }
@@ -390,22 +396,21 @@ export function mapArrayOptions(
  * @param Type The Type of the array
  * @param target The Target class
  * @param pkey Key of the Property
- * @param loggerType Type to use for logging
  */
 export function mapOptions(
   rawOptions: any,
-  Type: AnyParamConstructor<any> | (mongoose.Schema & IPrototype),
+  Type: AnyParamConstructor<any> | mongoose.Schema & IPrototype,
   target: any,
   pkey: string,
+  errorOC: boolean = true,
   loggerType?: AnyParamConstructor<any>
 ) {
   logger.debug('mapOptions called');
-  loggerType = loggerType ?? Type as AnyParamConstructor<any>;
 
   /** The Object that gets returned */
   const ret = {
-    inner: {} as KeyStringAny,
-    outer: {} as KeyStringAny
+    inner: {},
+    outer: {}
   };
 
   if (!(Type instanceof mongoose.Schema)) {
@@ -421,21 +426,21 @@ export function mapOptions(
     }
   }
 
-  if (isNullOrUndefined(loggerType)) {
-    logger.info('mapOptions loggerType is undefined!');
-  }
-
   /** The OptionsConstructor to use */
   let OptionsCTOR: undefined | AnyParamConstructor<any> = Type?.prototype?.OptionsConstructor;
 
-  // Fix because "Schema" is not a valid type and doesn't have a ".prototype.OptionsConstructor"
+  // Fix because "Schema" is not a valid type and dosnt have a ".prototype.OptionsConstructor"
   if (Type instanceof mongoose.Schema) {
     // TODO: remove "as any" cast if "OptionsConstructor" is implemented in @types/mongoose
     OptionsCTOR = (mongoose as any).Schema.Types.Embedded.prototype.OptionsConstructor;
   }
 
   if (isNullOrUndefined(OptionsCTOR)) {
-    throw new TypeError(`Type does not have an valid "OptionsConstructor"! (${getName(loggerType)} on ${getName(target)}.${pkey})`);
+    if (errorOC) {
+      throw new TypeError(`Type does not have an valid "OptionsConstructor"! (${getName(loggerType)} on ${getName(target)}.${pkey})`);
+    }
+
+    return ret;
   }
 
   const options = Object.assign({}, rawOptions); // for sanity
@@ -444,6 +449,7 @@ export function mapOptions(
   // "mongoose as any" is because the types package does not yet have an entry for "SchemaTypeOptions"
   // TODO: remove "as any" cast if "OptionsConstructor" is implemented in @types/mongoose
   if (OptionsCTOR.prototype instanceof (mongoose as any).SchemaTypeOptions) {
+    // console.log("test2", target, pkey, Type, OptionsCTR.prototype);
     for (const [key, value] of Object.entries(options)) {
       if (Object.getOwnPropertyNames(OptionsCTOR.prototype).includes(key)) {
         ret.inner[key] = value;
@@ -452,29 +458,10 @@ export function mapOptions(
       }
     }
   } else {
-    if (loggerType) {
-      logger.info('The Type "%s" has a property "OptionsConstructor" but it does not extend "SchemaTypeOptions"', getName(loggerType));
-    }
-
-    ret.outer = options;
+    logger.info('The Type "%s" has a property "OptionsConstructor" but it does not extend "SchemaTypeOptions', getName(loggerType));
   }
 
-  if (typeof options?.innerOptions === 'object') {
-    delete ret.outer.innerOptions;
-    for (const [key, value] of Object.entries(options.innerOptions)) {
-      ret.inner[key] = value;
-    }
-  }
-  if (typeof options?.outerOptions === 'object') {
-    delete ret.outer.outerOptions;
-    for (const [key, value] of Object.entries(options.outerOptions)) {
-      ret.outer[key] = value;
-    }
-  }
-
-  if (loggerType) {
-    logger.debug('Final mapped Options for Type "%s"', getName(loggerType), ret);
-  }
+  logger.debug('Final mapped Options for Type "%s"', getName(loggerType), ret);
 
   return ret;
 }
@@ -492,13 +479,13 @@ export function warnMixed(target: any, key: string | symbol): void | never {
   switch (modelOptions?.options?.allowMixed) {
     default:
     case Severity.WARN:
-      logger.warn('Setting "Mixed" for property "%s.%s"\nLook here for how to disable this message: https://typegoose.github.io/typegoose/docs/api/decorators/modelOptions/#allowmixed', name, key);
+      logger.warn('Implicitly setting "Mixed" is not allowed! (%s, %s)', name, key);
 
       break;
     case Severity.ALLOW:
       break;
     case Severity.ERROR:
-      throw new TypeError(format('Setting "Mixed" is not allowed! (%s, %s)', name, key));
+      throw new TypeError(format('Implicitly setting "Mixed" is not allowed! (%s, %s)', name, key));
   }
 
   return; // always return, if "allowMixed" is not "ERROR"
@@ -524,65 +511,20 @@ export function assignGlobalModelOptions(target: any) {
 }
 
 /**
- * Loop over "dimensions" and create an array from that
+ * Get the status of "_id"
+ * -> Check if _id should be present, or not
+ * @param Type The Class to check on
  * @param rawOptions baseProp's rawOptions
- * @param extra What is actually in the deepest array
- * @param name name of the target for better error logging
- * @param key key of target-key for better error logging
  */
-export function createArrayFromDimensions(rawOptions: any, extra: any, name: string, key: string) {
-  // dimensions start at 1 (not 0)
-  const dim = typeof rawOptions.dim === 'number' ? rawOptions.dim : 1;
-  if (dim < 1) {
-    throw new RangeError(format('"dim" needs to be higher than 0 (%s.%s)', name, key));
-  }
-  delete rawOptions.dim; // delete this property to not actually put it as an option
-  logger.info('createArrayFromDimensions called with %d dimensions', dim);
-
-  let retArray: any[] = Array.isArray(extra) ? extra : [extra];
-  // index starts at 1 because "retArray" is already once wrapped in an array
-  for (let index = 1; index < dim; index++) {
-    retArray = [retArray];
+export function get_idStatus(Type: any, rawOptions: any): boolean {
+  if (typeof rawOptions?._id === 'boolean') {
+    return rawOptions._id;
   }
 
-  return retArray as any[];
-}
-
-/**
- * Assert an condition, if "false" throw error
- * Note: it is not named "assert" to differentiate between node and jest types
- * @param cond The Condition to throw
- * @param error An Custom Error to throw
- */
-export function assertion(cond: any, error?: Error): asserts cond {
-  if (!cond) {
-    throw error ?? new Error('Assert failed - no custom error');
-  }
-}
-
-/**
- * Assert if val is an function (constructor for classes)
- * @param val Value to test
- */
-export function assertionIsClass(val: any): asserts val is Func {
-  assertion(typeof val === 'function', new NoValidClass(val));
-}
-
-/**
- * Get Type, if input is an arrow-function, execute it and return the result
- * @param typeOrFunc Function or Type
- */
-export function getType(typeOrFunc: Func | any): any {
-  if (typeof typeOrFunc === 'function' && !isConstructor(typeOrFunc)) {
-    return (typeOrFunc as Func)();
+  const TypeModelOptions = Reflect.getMetadata(DecoratorKeys.ModelOptions, Type);
+  if (typeof TypeModelOptions?.schemaOptions?._id === 'boolean') {
+    return TypeModelOptions.schemaOptions._id;
   }
 
-  return typeOrFunc;
-}
-
-/**
- * Is the provided input an class with an constructor?
- */
-export function isConstructor(obj: any): obj is AnyParamConstructor<any> {
-  return !isNullOrUndefined(obj?.prototype?.constructor?.name);
+  return true;
 }

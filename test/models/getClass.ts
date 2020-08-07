@@ -1,13 +1,14 @@
-import { getModelForClass, prop } from '../../src/typegoose';
+import { prop } from '../../src/prop';
+import { getModelForClass } from '../../src/typegoose';
 
 export class GetClassTestSub {
   @prop()
-  public subprop?: string;
+  public test: string;
 }
 
 export class GetClassTestParent {
   @prop()
-  public nested?: GetClassTestSub;
+  public testy: GetClassTestSub;
 }
 
 export const GetClassTestParentModel = getModelForClass(GetClassTestParent);

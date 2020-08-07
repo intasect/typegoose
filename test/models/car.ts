@@ -1,26 +1,28 @@
-import { getModelForClass, mongoose, pre, prop } from '../../src/typegoose';
+import * as mongoose from 'mongoose';
+
+import { getModelForClass, pre, prop } from '../../src/typegoose';
 
 @pre<Car>('save', function (next) {
-  if (this.carModel === 'Trabant') {
+  if (this.model === 'Trabant') {
     this.isSedan = true;
   }
   next();
 })
 export class Car {
   @prop({ required: true })
-  public carModel!: string;
+  public model: string;
 
   @prop({ lowercase: true })
-  public version?: string;
+  public version: string;
 
   @prop()
   public isSedan?: boolean;
 
   @prop({ required: true })
-  public price!: mongoose.Types.Decimal128;
+  public price: mongoose.Types.Decimal128;
 
   @prop()
-  public someId?: mongoose.Types.ObjectId;
+  public someId: mongoose.Types.ObjectId;
 }
 
-export const CarModel = getModelForClass(Car);
+export const model = getModelForClass(Car);

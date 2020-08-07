@@ -1,19 +1,19 @@
-import { getModelForClass, prop } from '../../src/typegoose';
+import { arrayProp, getModelForClass, prop } from '../../src/typegoose';
 
 export class AddressNested {
   @prop()
-  public street?: string;
+  public street: string;
 }
 
 export class PersonNested {
   @prop()
-  public name?: string;
+  public name: string;
 
   @prop({ _id: false })
-  public address?: AddressNested;
+  public address: AddressNested;
 
-  @prop({ _id: false, type: AddressNested })
-  public moreAddresses?: AddressNested[];
+  @arrayProp({ _id: false, items: AddressNested })
+  public moreAddresses: AddressNested[];
 }
 
 export const PersonNestedModel = getModelForClass(PersonNested);

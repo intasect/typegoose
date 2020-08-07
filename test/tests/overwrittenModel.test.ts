@@ -1,82 +1,70 @@
+import { expect } from 'chai';
+
 import { constructors, models } from '../../src/internal/data';
-import { deleteModel, deleteModelWithClass, getModelForClass, modelOptions, prop, types } from '../../src/typegoose';
+import { deleteModel, deleteModelWithClass, getModelForClass } from '../../src/typegoose';
 import { config } from '../utils/config';
-import { connect } from '../utils/connect';
+import { connect } from '../utils/mongooseConnect';
 import { NormalUser, OverwrittenUser } from './../models/overwrittenUser';
 
-it('should be possible to overwrite an existing model', () => {
-  const options = {
-    schemaOptions: {
-      collection: 'OverwriteUser'
-    },
-    options: { customName: 'User' }
-  } as types.IModelOptions;
+/**
+ * Function to pass into describe
+ * ->Important: you need to always bind this
+ */
+export function suite() {
+  it('should be possible to overwrite an existing model', () => {
+    const userModel = getModelForClass(NormalUser);
+    expect(userModel).to.be.a('function');
+    expect(userModel.modelName).to.equal('NormalUser');
+    expect(userModel.collection.collectionName).to.equal('OverwriteUser');
 
-  @modelOptions(options)
-  class FirstUser {
-    @prop()
-    public name: string;
-  }
+    deleteModel('User');
 
-  @modelOptions(options)
-  class SecondUser {
-    @prop()
-    public nickName: string;
-  }
+    const overwrittenUserModel = getModelForClass(OverwrittenUser);
+    expect(overwrittenUserModel).to.be.a('function');
+    expect(userModel.collection.collectionName).to.equal('OverwriteUser');
 
-  const userModel = getModelForClass(FirstUser);
-  expect(typeof userModel).toBe('function');
-  expect(userModel.modelName).toEqual('User');
-  expect(userModel.collection.collectionName).toEqual('OverwriteUser');
+    expect(overwrittenUserModel).not.be.equal(userModel);
 
-  deleteModel('User');
+    deleteModel('OverwrittenUser');
+  });
 
-  const overwrittenUserModel = getModelForClass(SecondUser);
-  expect(typeof overwrittenUserModel).toBe('function');
-  expect(overwrittenUserModel.modelName).toEqual('User');
-  expect(overwrittenUserModel.collection.collectionName).toEqual('OverwriteUser');
+  it('should not be possible to delete a non-existing model', () => {
+    const notExistingModelName = 'NotExistingModel';
+    expect(() => {
+      deleteModel(notExistingModelName);
+    }).to.throw(`Model "${notExistingModelName}" could not be found`);
+  });
 
-  expect(overwrittenUserModel).not.toEqual(userModel);
+  it('should make use of "deleteModelWithClass"', () => {
+    const model = getModelForClass(NormalUser);
 
-  deleteModel('User');
-});
+    expect(model).to.be.a('function');
+    expect(model.modelName).to.equal('NormalUser');
+    expect(model.collection.collectionName).to.equal('OverwriteUser');
 
-it('should not be possible to delete a non-existing model', () => {
-  const notExistingModelName = 'NotExistingModel';
-  expect(() => {
-    deleteModel(notExistingModelName);
-  }).toThrow(`Model "${notExistingModelName}" could not be found`);
-});
+    deleteModelWithClass(NormalUser);
 
-it('should make use of "deleteModelWithClass"', () => {
-  const model = getModelForClass(NormalUser);
+    const overwrittenUserModel = getModelForClass(OverwrittenUser);
+    expect(overwrittenUserModel).to.be.a('function');
+    expect(model.collection.collectionName).to.equal('OverwriteUser');
 
-  expect(typeof model).toBe('function');
-  expect(model.modelName).toEqual('NormalUser');
-  expect(model.collection.collectionName).toEqual('OverwriteUser');
+    expect(overwrittenUserModel).not.be.equal(model);
 
-  deleteModelWithClass(NormalUser);
+    deleteModelWithClass(OverwrittenUser);
+  });
 
-  const overwrittenUserModel = getModelForClass(OverwrittenUser);
-  expect(typeof overwrittenUserModel).toBe('function');
-  expect(model.collection.collectionName).toEqual('OverwriteUser');
+  it('should delete model from different connection', async () => {
+    const connection = await connect({ dbName: config.DataBase.concat('2'), createNewConnection: true });
+    const model = getModelForClass(NormalUser, { existingConnection: connection });
+    const name = model.modelName;
+    expect(name).to.equal('NormalUser');
 
-  expect(overwrittenUserModel).not.toEqual(model);
+    deleteModelWithClass(NormalUser);
+    expect(connection.models.NormalUser).to.equal(undefined);
 
-  deleteModelWithClass(OverwrittenUser);
-});
+    expect(models.has(name)).to.equal(false);
+    expect(constructors.has(name)).to.equal(false);
 
-it('should delete model from different connection', async () => {
-  const connection = await connect({ dbName: config.DataBase.concat('2'), createNewConnection: true });
-  const model = getModelForClass(NormalUser, { existingConnection: connection });
-  const name = model.modelName;
-  expect(name).toEqual('NormalUser');
-
-  deleteModelWithClass(NormalUser);
-  expect(connection.models.NormalUser).toBeUndefined();
-
-  expect(models.has(name)).toEqual(false);
-  expect(constructors.has(name)).toEqual(false);
-
-  await connection.close();
-});
+    await connection.close();
+  });
+}

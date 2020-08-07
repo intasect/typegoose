@@ -1,45 +1,48 @@
+import { assert, expect } from 'chai';
 import * as mongoose from 'mongoose';
 
 import { NumberValidatorEnum, NumberValidatorsModel } from '../models/numberValidators';
 
 // Please try to keep this file in sync with ./arrayValidator.test.ts
 
-it('should respect max', async () => {
-  await expect(
-    NumberValidatorsModel.create({
+/**
+ * Function to pass into describe
+ * ->Important: you need to always bind this
+ */
+export function suite() {
+  it('should respect max', (done) => {
+    expect(NumberValidatorsModel.create({
       max: 4 // over 3
-    })
-  ).rejects.toBeInstanceOf(mongoose.Error.ValidationError);
-});
-
-it('should respect min', async () => {
-  await expect(
-    NumberValidatorsModel.create({
-      min: 9 // under 10
-    })
-  ).rejects.toBeInstanceOf(mongoose.Error.ValidationError);
-});
-
-it('should respect enum', async () => {
-  try {
-    await NumberValidatorsModel.create({
-      enumed: 5 // number not in the enum
-    });
-
-    fail('Expected to throw ValidationError!');
-  } catch (err) {
-    expect(err).toBeInstanceOf(mongoose.Error.ValidationError);
-  }
-
-  const doc = await NumberValidatorsModel.create({
-    enumed: NumberValidatorEnum.OPT2
+    })).to.eventually.rejectedWith(mongoose.Error.ValidationError).and.notify(done);
   });
 
-  expect(doc).not.toBeUndefined();
-  expect(doc.enumed).toEqual(NumberValidatorEnum.OPT2);
+  it('should respect min', (done) => {
+    expect(NumberValidatorsModel.create({
+      min: 9 // under 10
+    })).to.eventually.rejectedWith(mongoose.Error.ValidationError).and.notify(done);
+  });
 
-  const found = await NumberValidatorsModel.findById(doc._id).orFail().exec();
+  it('should respect enum', async () => {
+    try {
+      await NumberValidatorsModel.create({
+        enumed: 5 // number not in the enum
+      });
 
-  expect(found).not.toBeUndefined();
-  expect(found.enumed).toEqual(NumberValidatorEnum.OPT2);
-});
+      assert.fail('Expected to throw ValidationError!');
+    } catch (err) {
+      expect(err).to.be.an.instanceOf(mongoose.Error.ValidationError);
+    }
+
+    const doc = await NumberValidatorsModel.create({
+      enumed: NumberValidatorEnum.OPT2
+    });
+
+    expect(doc).to.not.equal(undefined);
+    expect(doc.enumed).to.equal(NumberValidatorEnum.OPT2);
+
+    const found = await NumberValidatorsModel.findById(doc._id).exec();
+
+    expect(found).to.not.equal(undefined);
+    expect(found.enumed).to.equal(NumberValidatorEnum.OPT2);
+  });
+}

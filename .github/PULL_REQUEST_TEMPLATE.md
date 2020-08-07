@@ -1,7 +1,7 @@
 <!--
 Try to use a template, found at .github/PULL_REQUEST_TEMPLATE/
 [here](https://github.com/typegoose/typegoose/tree/master/.github/PULL_REQUEST_TEMPLATE)
-please don't forget to click on raw, and copy that, not the already "compiled" one
+please dont forget to click on raw, and copy that, not the already "compiled" one
 -->
 
 <!--
@@ -12,7 +12,11 @@ please don't forget to click on raw, and copy that, not the already "compiled" o
 - Please have "Allow edits from maintainers" activated
 -->
 
-<!--Write your PR description here (above "Related Issues")-->
+## Misc
+
+- [ ] Is this a prototype? <!--Is this PR already finished or not yet ready?-->
+- [ ] Written Tests for it? <!--Written Tests for this feature / fix? (only if needed)-->
+- [ ] Already read & followed [CONTRIBUTING](https://github.com/typegoose/typegoose/tree/master/.github/CONTRIBUTING.md)?
 
 ## Related Issues
 

@@ -1,5 +1,5 @@
 // Tests for discriminators and refPaths
-import { getModelForClass, getName, prop, Ref } from '../../src/typegoose';
+import { arrayProp, getModelForClass, prop, Ref } from '../../src/typegoose';
 
 export class Scooter {
   @prop()
@@ -21,21 +21,24 @@ export class Inventory {
   @prop({ default: 1 })
   public value?: number;
 
-  @prop({ required: true, enum: [getName(Beverage), getName(Scooter)] })
+  @prop({ required: true, enum: ['Beverage', 'Scooter'] })
   public refItemPathName!: string;
+
+  @prop()
+  public name?: string;
 
   @prop({ required: true, refPath: 'refItemPathName' })
   public kind!: Ref<Beverage | Scooter>;
 
-  @prop({ required: true, refPath: 'refItemPathName' })
-  public kindArray!: Ref<Beverage | Scooter>[];
+  @arrayProp({ required: true, refPath: 'refItemPathName' })
+  public irp!: Ref<Beverage | Scooter>[];
 }
 
 export class TestIRPbyString {
   @prop({ required: true })
   public normalProp!: string;
 
-  @prop({ required: true, ref: Beverage })
+  @arrayProp({ required: true, ref: 'Beverage' })
   public bev!: Ref<Beverage>[];
 }
 
