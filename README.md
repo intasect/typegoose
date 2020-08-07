@@ -5,7 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/typegoose/typegoose/badge.svg?branch=master#feb282019)](https://coveralls.io/github/typegoose/typegoose?branch=master)
 [![npm](https://img.shields.io/npm/dt/@typegoose/typegoose.svg)](https://www.npmjs.com/package/@typegoose/typegoose)
 
-Define Mongoose models using TypeScript classes
+Define Mongoose models using TypeScript classes.
 
 ## Basic usage
 
@@ -34,7 +34,7 @@ const UserModel = getModelForClass(User); // UserModel is a regular Mongoose Mod
 
 A common problem when using Mongoose with TypeScript is that you have to define both the Mongoose model and the TypeScript interface. If the model changes, you also have to keep the TypeScript interface file in sync or the TypeScript interface would not represent the real data structure of the model.
 
-Typegoose aims to solve this problem by defining only a TypeScript interface (class), which needs to be enhanced with special Typegoose decorators (like `@prop`).
+Typegoose aims to solve this problem by defining only a TypeScript interface (class) which need to be enhanced with special Typegoose decorators.
 
 Under the hood it uses the Reflect & [reflect-metadata](https://github.com/rbuckton/reflect-metadata) API to retrieve the types of the properties, so redundancy can be significantly reduced.
 
@@ -103,57 +103,56 @@ class User {
 }
 ```
 
-[Extra Examples](https://typegoose.github.io/typegoose/docs/guides/quick-start-guide#extra-examples)
-
 ---
 
 ## Requirements
 
-* TypeScript 3.9+
-* Node 10.15+
-* mongoose ^5.9.22
-* `experimentalDecorators` and `emitDecoratorMetadata` must be enabled in `tsconfig.json`
-* tsconfig option `target` being `ES6`
-
-Note: it is recommended to not use babel [see here why](https://typegoose.github.io/typegoose/docs/guides/known-issues/#babel)
+* TypeScript 3.7+
+* Node 8.10+
+* mongoose ^5.9.2
+* `emitDecoratorMetadata` and `experimentalDecorators` must be enabled in `tsconfig.json`
 
 ## Install
 
-```sh
-npm i -s @typegoose/typegoose # install typegoose itself
+`npm i -s @typegoose/typegoose`
 
-npm i -s mongoose # install peer-dependencie mongoose
-npm i -D @types/mongoose # install all types for mongoose - this is required for typegoose to work in typescript
-```
+You also need to install `mongoose`, since version 5 it is listed as a peer-dependency
+
+`npm i -s mongoose`
 
 ## Testing
 
-```sh
-npm i -D
-npm test
-```
+`npm run test`
+Run our tests after running `npm i -D`
 
 ## Versioning
 
-This Project should comply with [Semver](https://semver.org). It uses the `Major.Minor.Fix` standard (or in NPM terms, `Major.Minor.Patch`).
+`Major.Minor.Fix` (or how npm expresses it `Major.Minor.Patch`)  
+(This Project should comply with [Semver](https://semver.org))
 
 ## Join Our Discord Server
 
-To ask questions or just talk with us, [join our Discord Server](https://discord.gg/BpGjTTD).
+To ask questions or just talk with us [join our Discord Server](https://discord.gg/BpGjTTD)
 
 ## Documentation
 
-* [Typegoose Documentation](https://typegoose.github.io/typegoose/docs/api/index-api)
-* [Quick start guide](https://typegoose.github.io/typegoose/docs/guides/quick-start-guide/)  
+[Here is the Documentation](https://typegoose.github.io/typegoose/docs)  
+[Here are the Guides](https://typegoose.github.io/typegoose/guides/quick-start-guide/)  
+
+## Migrate to 6.0.0
+
+[Migrate to 6.0.0](https://typegoose.github.io/typegoose/guides/migrate-to-6/)
 
 ## Known Issues
 
-[Here are the known-issues](https://typegoose.github.io/typegoose/docs/guides/known-issues/)
+[Here are the known-issues](https://typegoose.github.io/typegoose/guides/known-issues/)
 
 ## FAQ
 
-[Here is the FAQ](https://typegoose.github.io/typegoose/docs/guides/faq/)
+[Here is the FAQ](https://typegoose.github.io/typegoose/guides/faq/)
 
 ## Notes
 
-* Please don't add `+1` or similar comments to issues. Use the reactions instead.
+* Please dont add comments with `+1` or something like that, use the Reactions
+* `npm run doc` generates all documentation for all files that can be used as modules (is used for github-pages)
+* `npm run doc:all` generates documentation even for internal modules

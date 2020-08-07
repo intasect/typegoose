@@ -1,15 +1,15 @@
-import type { Types } from 'mongoose';
+import { Types } from 'mongoose';
 
-import { modelOptions } from './modelOptions';
-import type { AnyParamConstructor, DocumentType, RefType } from './types';
+import { modelOptions } from './optionsProp';
+import { DocumentType, RefType } from './types';
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 /**
- * This class can be used for already existing type information for the Timestamps
+ * This class can be used for already existing type infomation for the Timestamps
  */
 export abstract class TimeStamps {
-  public createdAt?: Date;
-  public updatedAt?: Date;
+  public createdAt!: Readonly<Date>;
+  public updatedAt!: Readonly<Date>;
 }
 
 /**
@@ -18,9 +18,9 @@ export abstract class TimeStamps {
 export abstract class Base<T_ID extends RefType = Types.ObjectId> {
   public _id: T_ID;
   // tslint:disable-next-line:variable-name
-  public __v?: number;
+  public __v: number;
   // tslint:disable-next-line:variable-name
-  public __t?: string | number;
+  public __t: undefined | string | number;
 }
 
 export interface FindOrCreateResult<T> {
@@ -33,7 +33,7 @@ export interface FindOrCreateResult<T> {
  */
 export abstract class FindOrCreate {
   public static findOrCreate: <T extends FindOrCreate>(
-    this: AnyParamConstructor<T>,
+    this: new (...a: any[]) => T,
     condition: any
   ) => Promise<FindOrCreateResult<T>>;
 }

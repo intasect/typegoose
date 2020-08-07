@@ -1,27 +1,35 @@
 import * as findOrCreate from 'mongoose-findorcreate';
-import { isNullOrUndefined } from '../../src/internal/utils';
-import { defaultClasses, DocumentType, getModelForClass, plugin, prop, Ref, ReturnModelType } from '../../src/typegoose';
+import {
+  arrayProp,
+  defaultClasses,
+  DocumentType,
+  getModelForClass,
+  plugin,
+  prop,
+  Ref,
+  ReturnModelType
+} from '../../src/typegoose';
+import { Genders } from '../enums/genders';
+import { Role } from '../enums/role';
 import { Car } from './car';
 import { Job } from './job';
-
-export enum Genders {
-  MALE = 'male',
-  FEMALE = 'female'
-}
-
-export enum Role {
-  Admin = 'admin',
-  User = 'user',
-  Guest = 'guest'
-}
 
 @plugin(findOrCreate)
 export class User extends defaultClasses.FindOrCreate {
   @prop({ required: true })
-  public firstName!: string;
+  public firstName: string;
 
   @prop({ required: true })
-  public lastName!: string;
+  public lastName: string;
+
+  public get fullName() {
+    return `${this.firstName} ${this.lastName}`;
+  }
+  public set fullName(full) {
+    const split = full.split(' ');
+    this.firstName = split[0];
+    this.lastName = split[1];
+  }
 
   @prop({ default: 'Nothing' })
   public nick?: string;
@@ -39,13 +47,13 @@ export class User extends defaultClasses.FindOrCreate {
   public age?: number;
 
   @prop({ enum: Genders, required: true })
-  public gender!: Genders;
+  public gender: Genders;
 
   @prop({ enum: Role })
-  public role?: Role;
+  public role: Role;
 
-  @prop({ type: String, enum: Role, default: [Role.Guest] })
-  public roles?: Role[];
+  @arrayProp({ items: String, enum: Role, default: [Role.Guest] })
+  public roles: Role[];
 
   @prop()
   public job?: Job;
@@ -53,23 +61,14 @@ export class User extends defaultClasses.FindOrCreate {
   @prop({ ref: Car })
   public car?: Ref<Car>;
 
-  @prop({ type: String, required: true })
-  public languages!: string[];
+  @arrayProp({ items: String, required: true })
+  public languages: string[];
 
-  @prop({ type: Job, _id: false })
+  @arrayProp({ items: Job, _id: false })
   public previousJobs?: Job[];
 
-  @prop({ ref: Car })
+  @arrayProp({ ref: Car })
   public previousCars?: Ref<Car>[];
-
-  public get fullName(): string {
-    return `${this.firstName} ${this.lastName}`;
-  }
-  public set fullName(full: string) {
-    const split = full.split(' ');
-    this.firstName = split[0];
-    this.lastName = split[1];
-  }
 
   public static async findByAge(this: ReturnModelType<typeof User>, age: number) {
     return this.findOne({ age }).exec();
@@ -88,15 +87,11 @@ export class User extends defaultClasses.FindOrCreate {
     return this.save();
   }
 
-  public async addJob(this: DocumentType<User>, job: Job = new Job()) {
-    if (isNullOrUndefined(this.previousJobs)) {
-      this.previousJobs = [];
-    }
-
+  public async addJob(this: DocumentType<User>, job: Job = {}) {
     this.previousJobs.push(job);
 
     return this.save();
   }
 }
 
-export const UserModel = getModelForClass(User);
+export const model = getModelForClass(User);

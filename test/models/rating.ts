@@ -1,27 +1,21 @@
-import { getModelForClass, index, prop, Ref } from '../../src/typegoose';
-
-export class RatingCar {
-  @prop({ required: true })
-  public carModel!: string;
-}
-
-export class RatingUser {
-  @prop({ required: true })
-  public name!: string;
-}
+import { arrayProp, getModelForClass, index, prop, Ref } from '../../src/typegoose';
+import { Car } from './car';
+import { User } from './user';
 
 @index({ car: 1, user: 1 }, { unique: true })
+@index({ location: '2dsphere' })
 export class Rating {
-  @prop({ ref: RatingCar, required: true })
-  public car!: Ref<RatingCar>;
+  @prop({ ref: Car })
+  public car: Ref<Car>;
 
-  @prop({ ref: RatingUser, required: true })
-  public user!: Ref<RatingUser>;
+  @prop({ ref: User })
+  public user: Ref<User>;
 
-  @prop({ required: true })
-  public stars!: number;
+  @prop()
+  public stars: number;
+
+  @arrayProp({ items: Array })
+  public location: [[number]];
 }
 
-export const RatingCarModel = getModelForClass(RatingCar);
-export const RatingUserModel = getModelForClass(RatingUser);
-export const RatingModel = getModelForClass(Rating);
+export const model = getModelForClass(Rating);

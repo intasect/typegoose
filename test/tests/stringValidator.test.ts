@@ -1,69 +1,69 @@
+import { assert, expect } from 'chai';
 import * as mongoose from 'mongoose';
 
 import { StringValidatorEnum, StringValidatorsModel } from '../models/stringValidators';
 
 // Please try to keep this file in sync with ./arrayValidator.test.ts
 
-it('should respect maxlength', async () => {
-  expect.assertions(1);
-  await expect(
-    StringValidatorsModel.create({
+/**
+ * Function to pass into describe
+ * ->Important: you need to always bind this
+ */
+export function suite() {
+  it('should respect maxlength', (done) => {
+    expect(StringValidatorsModel.create({
       maxLength: 'this is too long'
-    })
-  ).rejects.toBeInstanceOf(mongoose.Error.ValidationError);
-});
+    })).to.eventually.rejectedWith(mongoose.Error.ValidationError).and.notify(done);
+  });
 
-it('should respect minlength', async () => {
-  expect.assertions(1);
-  await expect(
-    StringValidatorsModel.create({
+  it('should respect minlength', (done) => {
+    expect(StringValidatorsModel.create({
       minLength: 'too short'
-    })
-  ).rejects.toBeInstanceOf(mongoose.Error.ValidationError);
-});
-
-it('should trim', async () => {
-  const trimmed = await StringValidatorsModel.create({
-    trimmed: 'trim my end    '
+    })).to.eventually.rejectedWith(mongoose.Error.ValidationError).and.notify(done);
   });
-  expect(trimmed.trimmed).toEqual('trim my end');
-});
 
-it('should uppercase', async () => {
-  const uppercased = await StringValidatorsModel.create({
-    uppercased: 'make me uppercase'
+  it('should trim', async () => {
+    const trimmed = await StringValidatorsModel.create({
+      trimmed: 'trim my end    '
+    });
+    expect(trimmed.trimmed).equals('trim my end');
   });
-  expect(uppercased.uppercased).toEqual('MAKE ME UPPERCASE');
-});
 
-it('should lowercase', async () => {
-  const lowercased = await StringValidatorsModel.create({
-    lowercased: 'MAKE ME LOWERCASE'
+  it('should uppercase', async () => {
+    const uppercased = await StringValidatorsModel.create({
+      uppercased: 'make me uppercase'
+    });
+    expect(uppercased.uppercased).equals('MAKE ME UPPERCASE');
   });
-  expect(lowercased.lowercased).toEqual('make me lowercase');
-});
 
-it('should respect enum', async () => {
-  try {
-    await StringValidatorsModel.create({
-      // @ts-expect-error
-      enumed: 'not in the enum' // string not in the enum
+  it('should lowercase', async () => {
+    const lowercased = await StringValidatorsModel.create({
+      lowercased: 'MAKE ME LOWERCASE'
+    });
+    expect(lowercased.lowercased).equals('make me lowercase');
+  });
+
+  it('should respect enum', async () => {
+    try {
+      await StringValidatorsModel.create({
+        enumed: 'not in the enum' // string not in the enum
+      });
+
+      assert.fail('Expected to throw ValidationError!');
+    } catch (err) {
+      expect(err).to.be.an.instanceOf(mongoose.Error.ValidationError);
+    }
+
+    const doc = await StringValidatorsModel.create({
+      enumed: StringValidatorEnum.OPT2
     });
 
-    fail('Expected to throw ValidationError!');
-  } catch (err) {
-    expect(err).toBeInstanceOf(mongoose.Error.ValidationError);
-  }
+    expect(doc).to.not.equal(undefined);
+    expect(doc.enumed).to.equal(StringValidatorEnum.OPT2);
 
-  const doc = await StringValidatorsModel.create({
-    enumed: StringValidatorEnum.OPT2
+    const found = await StringValidatorsModel.findById(doc._id).exec();
+
+    expect(found).to.not.equal(undefined);
+    expect(found.enumed).to.equal(StringValidatorEnum.OPT2);
   });
-
-  expect(doc).not.toBeUndefined();
-  expect(doc.enumed).toEqual(StringValidatorEnum.OPT2);
-
-  const found = await StringValidatorsModel.findById(doc._id).orFail().exec();
-
-  expect(found).not.toBeUndefined();
-  expect(found.enumed).toEqual(StringValidatorEnum.OPT2);
-});
+}

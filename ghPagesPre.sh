@@ -3,12 +3,13 @@
 
 shopt -s dotglob nullglob
 
-cd website
-yarn
-yarn build
-cd ..
-find . -not -regex "^\.\/website.*\|^.\/\.git.*" -delete # delete everything that is not starting with ".git" or "website/build"
-mv website/build/* ./
+npm run doc
+mkdir github-page/typedoc # redundant but needed in travis
+mv doc/* github-page/typedoc/
+find . -not -regex "^\.\/doc.*\|^\.\/github-page.*\|^\.\/\.git.*" -delete
+mv github-page/* ./
+rm .gitignore
+mv travis-.gitignore .gitignore # because "typedoc" folder should be ignored on normal pushed, but not by travis
 
 # redundant, just to have it clean
-rm -rf website
+rm -rf github-page
