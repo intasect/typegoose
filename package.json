@@ -38,8 +38,8 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "mongoose": "5.9.22",
-    "@types/mongoose": "5.7.30"
+    "mongoose": "5.8.11",
+    "@types/mongoose": "5.7.6"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
