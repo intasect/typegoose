@@ -38,8 +38,8 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "mongoose": "5.8.11",
-    "@types/mongoose": "5.7.6"
+    "mongoose": "5.10.15",
+    "@types/mongoose": "5.10.3"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
@@ -54,7 +54,8 @@
     "coveralls": "^3.0.9",
     "mocha": "^7.0.1",
     "mongodb-memory-server": "^6.2.4",
-    "mongoose": "5.9.22",
+    "mongoose": "5.10.15",
+    "@types/mongoose": "5.10.3",
     "mongoose-findorcreate": "^3.0.0",
     "nyc": "^15.0.0",
     "prettier": "^1.19.1",
